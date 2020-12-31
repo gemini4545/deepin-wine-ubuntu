@@ -31,15 +31,13 @@ init_log_file()
 debug_log_to_file()
 {
     if [ -d "$DEBUG_LOG" ];then
-        strDate=$(date)
-        echo -e "${strDate}:${1}" >> "$LOG_FILE"
+        echo -e "${1}" >> "$LOG_FILE"
     fi
 }
 
 debug_log()
 {
-    strDate=$(date)
-    echo "${strDate}:${1}"
+    echo "${1}"
 }
 
 init_log_file
@@ -93,9 +91,10 @@ FixLink()
     if [ -d ${WINEPREFIX} ]; then
         CUR_DIR=$PWD
         cd "${WINEPREFIX}/dosdevices"
-        rm c: z:
+        rm c: z: y:
         ln -s -f ../drive_c c:
         ln -s -f / z:
+        ln -s -f $HOME y:
         cd $CUR_DIR
         ls -l "${WINEPREFIX}/dosdevices"
     fi
@@ -347,6 +346,9 @@ CallApp()
         "Deepin-ATM")
             CallATM "$@"
             ;;
+        "Deepin-WeChat")
+            CallWeChat "$@"
+            ;;
         *)
             CallProcess "$@"
             ;;
@@ -358,6 +360,7 @@ ExtractApp()
 	7z x "$APPDIR/$APPTAR" -o"$1"
 	mv "$1/drive_c/users/@current_user@" "$1/drive_c/users/$USER"
 	sed -i "s#@current_user@#$USER#" $1/*.reg
+    FixLink
 }
 DeployApp()
 {
@@ -386,6 +389,15 @@ UpdateApp()
 	if [ -d "${WINEPREFIX}.tmpdir" ]; then
 		rm -rf "${WINEPREFIX}.tmpdir"
 	fi
+
+    case $BOTTLENAME in
+        "Deepin-Intelligent" | "Deepin-QQ" | "Deepin-TIM" | "Deepin-WeChat")
+            rm -rf "$WINEPREFIX"
+            DeployApp
+            return
+            ;;
+    esac
+
 	ExtractApp "${WINEPREFIX}.tmpdir"
 	/opt/deepinwine/tools/updater -s "${WINEPREFIX}.tmpdir" -c "${WINEPREFIX}" -v
 	rm -rf "${WINEPREFIX}.tmpdir"
